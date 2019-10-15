@@ -40,18 +40,11 @@ namespace Geotik.Route.Service
                 .Select(mapper.Map<TraceRequestPoint>)
                 .ToList();
 
-            var request = new RouteMatchingRequest
-            {
-                app_id = routeMatchingConfig.AppId,
-                app_code = routeMatchingConfig.AppCode,
-                routemode = parameters.RouteMode.ToString(),
-                filetype = "CSV"
-            };
 
             var fileContent = tracePointRequestFormatter.Format(routePoints);
             var content = new StringContent(fileContent);
 
-            var requestUri = PrepareRequestUri(parameters, request);
+            var requestUri = PrepareRequestUri(parameters, routeMatchingConfig);
             var tracePoints = await GetRouteMatchingResult(httpClient, requestUri, content);
 
             return tracePointMapper.ApplyTracing(tracePoints, routeList);
@@ -67,30 +60,23 @@ namespace Geotik.Route.Service
 
             if (response.StatusCode != HttpStatusCode.OK)
             {
-                throw new RouteMatchingException(string.Format("Route matching client returned wrong result: {0} {1}",
-                    response.StatusCode,
-                    responseString));
+                throw new RouteMatchingException(
+                    $"Route matching client returned wrong result: {response.StatusCode} {responseString}");
             }
-            
-            var result = JsonConvert.DeserializeObject<RouteMatchingResult>(responseString);
-            return result;
+
+            return JsonConvert.DeserializeObject<RouteMatchingResult>(responseString);
         }
 
-        private Uri PrepareRequestUri(RouteMatchingParams parameters, RouteMatchingRequest request)
+        private Uri PrepareRequestUri(RouteMatchingParams parameters, RouteMatchingConfig request)
         {
-            var requestQuery = $"?app_id={request.app_id}&app_code={request.app_code}" +
-                               $"&routeMode={parameters.RouteMode.ToString()}" +
-                               "&filetype=CSV";
+            var requestQuery = string.Concat(
+                $"?app_id={request.AppId}&app_code={request.AppCode}",
+                $"&routeMode={parameters.RouteMode.ToString()}",
+                "&filetype=CSV");
 
-            var requestUri = new Uri(string.Concat(routeMatchingConfig.MatchRouteUrl, requestQuery));
-            return requestUri;
-        }
-    }
-
-    public class RouteMatchingException : Exception
-    {
-        public RouteMatchingException(string message) : base(message)
-        {
+            return new Uri(string.Concat(
+                routeMatchingConfig.MatchRouteUrl, 
+                requestQuery));
         }
     }
 }
