@@ -40,7 +40,6 @@ namespace Geotik.Route.Service
                 .Select(mapper.Map<TraceRequestPoint>)
                 .ToList();
 
-
             var fileContent = tracePointRequestFormatter.Format(routePoints);
             var content = new StringContent(fileContent);
 

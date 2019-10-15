@@ -1,0 +1,1 @@
+Please ensure that you change route matching apiId and apiCode in appsettings.json "RouteMatching" section prior using the Api.
